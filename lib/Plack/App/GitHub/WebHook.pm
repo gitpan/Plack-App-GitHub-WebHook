@@ -1,9 +1,7 @@
+use strict;
 package Plack::App::GitHub::WebHook;
-{
-  $Plack::App::GitHub::WebHook::VERSION = '0.2';
-}
 #ABSTRACT: GitHub WebHook receiver as Plack application
-
+our $VERSION = '0.3'; #VERSION
 use v5.10;
 use JSON qw(decode_json);
 
@@ -16,8 +14,9 @@ use Carp qw(croak);
 sub prepare_app {
     my $self = shift;
 
-    croak "hook must be a CODEREF" 
-        unless (ref($self->hook) // '') eq 'CODE';
+    if ($self->hook and (!ref $self->hook or ref $self->hook ne 'CODE')) {
+        croak "hook must be a CODEREF"
+    }
 
     $self->access([
         allow => "204.232.175.64/27",
@@ -27,18 +26,22 @@ sub prepare_app {
 
     $self->app(
         Plack::Middleware::Access->wrap(
-            sub { $self->receive(shift) },
+            sub { $self->call_granted(shift) },
             rules => $self->access
         )
     );
+
+    $self->init;
 }
+
+sub init { }
 
 sub call {
     my ($self, $env) = @_;
     $self->app->($env);
 }
 
-sub receive {
+sub call_granted {
     my ($self, $env) = @_;
 
     if ( $env->{REQUEST_METHOD} ne 'POST' ) {
@@ -53,17 +56,31 @@ sub receive {
         return [400,['Content-Type'=>'text/plain','Content-Length'=>11],['Bad Request']];
     }
 
-    # should this be catched?
-    $self->{hook}->($json) if $self->{hook};
+    if ( $self->receive($json) ) {
+        return [200,['Content-Type'=>'text/plain','Content-Length'=>2],['OK']];
+    } else {
+        return [202,['Content-Type'=>'text/plain','Content-Length'=>2],['Accepted']];
+    }
+}
 
-    return [200,['Content-Type'=>'text/plain','Content-Length'=>2],['OK']];
+sub receive {
+    my ($self, $payload) = @_;
+
+    if ($self->{hook}) {
+        return $self->{hook}->($payload);
+    } else {
+        return;
+    }
 }
 
 
 1;
 
 __END__
+
 =pod
+
+=encoding UTF-8
 
 =head1 NAME
 
@@ -71,7 +88,7 @@ Plack::App::GitHub::WebHook - GitHub WebHook receiver as Plack application
 
 =head1 VERSION
 
-version 0.2
+version 0.3
 
 =head1 SYNOPSIS
 
@@ -80,13 +97,12 @@ version 0.2
     Plack::App::GitHub::WebHook->new(
         hook => sub {
             my $payload = shift;
-
             return unless $payload->{repository}->{name} eq 'foo-bar';
-
             foreach (@{$payload->{commits}}) {
                 ...
             }
-    );
+        }
+    )->to_app;
 
 
     # access restriction, as enabled by default
@@ -97,12 +113,10 @@ version 0.2
             allow => "192.30.252.0/22",
             deny  => 'all'
         ]
-    );
+    )->to_app;
 
-
-    # alternatively
+    # this is equivalent to
     use Plack::Builder;
-
     builder {
         mount 'notify' => builder {
             enable 'Access', rules => [
@@ -128,7 +142,7 @@ The response of a HTTP request to this application is one of:
 
 =item HTTP 403 Forbidden
 
-If access was not granted.
+If access was not granted (for instance because it did not origin from GitHub).
 
 =item HTTP 405 Method Not Allowed
 
@@ -141,8 +155,11 @@ further validation.
 
 =item HTTP 200 OK
 
-Otherwise. The hook is only called in this case. The hook should not die; a
-later version of this module may also catch errors.
+Otherwise, if the hook was called and returned a true value.
+
+=item HTTP 202 Accepted
+
+Otherwise, if the hook was called and returned a false value.
 
 =back
 
@@ -154,7 +171,12 @@ This module requires at least Perl 5.10.
 
 =item hook
 
-A code reference that gets passed the encoded payload.
+A code reference that gets passed the encoded payload. Alternatively derive a
+subclass from Plack::App::GitHub::WebHook and implement the method C<receive>
+instead. The hook or receive method is expected to return a true value. If it
+returns a false value, the application will return HTTP status code 202 instead
+of 200. One can use this mechanism for instance to detect hooks that were
+called successfully but failed to execute for some reason.
 
 =item access
 
@@ -165,7 +187,10 @@ instantiation, or manually call C<prepare_app> after modification.
 
 =back
 
-=encoding utf8
+=head1 SEE ALSO
+
+L<WWW::GitHub::PostReceiveHook> uses L<Web::Simple> to receive GitHub web
+hooks. L<Net::GitHub> and L<Pithub> provide access to GitHub APIs.
 
 =head1 AUTHOR
 
@@ -173,10 +198,9 @@ Jakob Voß
 
 =head1 COPYRIGHT AND LICENSE
 
-This software is copyright (c) 2013 by Jakob Voß.
+This software is copyright (c) 2014 by Jakob Voß.
 
 This is free software; you can redistribute it and/or modify it under
 the same terms as the Perl 5 programming language system itself.
 
 =cut
-
