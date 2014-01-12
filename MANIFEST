@@ -10,3 +10,4 @@ lib/Plack/App/GitHub/WebHook.pm
 t/access.t
 t/author-critic.t
 t/basic.t
+t/hooks.t

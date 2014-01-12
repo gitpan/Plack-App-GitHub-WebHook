@@ -16,9 +16,9 @@ requires:
   JSON: 2.0
   Plack: 1.0
   Plack::Middleware::Access: 0.3
-  perl: 5.010
+  perl: v5.10.0
 resources:
   bugtracker: https://github.com/nichtich/Plack-App-GitHub-WebHook/issues
   homepage: https://github.com/nichtich/Plack-App-GitHub-WebHook
   repository: https://github.com/nichtich/Plack-App-GitHub-WebHook.git
-version: 0.3
+version: 0.4
