@@ -1,5 +1,9 @@
 # Change file for Plack::App::GitHub::WebHook
 
+0.5  2014-09-30 14:52:44 CEST
+    - New options: events and safe
+    - Migrated to Dist::Milla
+
 0.4 2014-01-09
     - Support multiple hooks, chained
 

@@ -1,17 +1,25 @@
 ---
 abstract: 'GitHub WebHook receiver as Plack application'
 author:
-  - 'Jakob Voß'
+  - 'Jakob Voss C<< <jakob.voss@gbv.de> >>'
 build_requires: {}
 configure_requires:
-  ExtUtils::MakeMaker: 6.30
+  Module::Build::Tiny: 0.038
 dynamic_config: 0
-generated_by: 'Dist::Zilla version 5.008, CPAN::Meta::Converter version 2.133380'
+generated_by: 'Dist::Milla version v1.0.8, Dist::Zilla version 5.020, CPAN::Meta::Converter version 2.142060'
 license: perl
 meta-spec:
   url: http://module-build.sourceforge.net/META-spec-v1.4.html
   version: 1.4
 name: Plack-App-GitHub-WebHook
+no_index:
+  directory:
+    - t
+    - xt
+    - inc
+    - share
+    - eg
+    - examples
 requires:
   JSON: 2.0
   Plack: 1.0
@@ -21,4 +29,8 @@ resources:
   bugtracker: https://github.com/nichtich/Plack-App-GitHub-WebHook/issues
   homepage: https://github.com/nichtich/Plack-App-GitHub-WebHook
   repository: https://github.com/nichtich/Plack-App-GitHub-WebHook.git
-version: 0.4
+version: 0.5
+x_contributors:
+  - 'Jakob Voss <jakob@nichtich.de>'
+  - 'Jakob Voss <voss@gbv.de>'
+  - 'Tomáš Znamenáček <tomas.znamenacek@gmail.com>'
